@@ -7,12 +7,12 @@ from tqdm.auto import tqdm
 from os.path import join, exists, dirname, abspath, realpath
 
 def download_file(url, filename):
-  response = requests.get(url, stream=True)
-  with tqdm.wrapattr(open(filename, "wb"), "write", miniters=1,
-                    total=int(response.headers.get('content-length', 0)),
-                    desc=filename) as fout:
-      for chunk in response.iter_content(chunk_size=4096):
-          fout.write(chunk)
+    response = requests.get(url, stream=True)
+    with tqdm.wrapattr(open(filename, "wb"), "write", miniters=1,
+                        total=int(response.headers.get('content-length', 0)),
+                        desc=filename) as fout:
+        for chunk in response.iter_content(chunk_size=4096):
+            fout.write(chunk)
 
 if __name__ == "__main__":
     pwd = dirname(realpath("__file__"))

@@ -65,18 +65,17 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             q8loss = loss_fn(q8output_batch, q8labels_batch)
 
             loss = q3loss + q8loss
-            # clear previous gradients, compute gradients of all variables wrt loss
-
             
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             q3output_batch = q3output_batch.data.cpu().numpy()
             q8output_batch = q8output_batch.data.cpu().numpy()
             q3labels_batch = q3labels_batch.data.cpu().numpy()
             q8labels_batch = q8labels_batch.data.cpu().numpy()
-            #mask shape = N x 1632
+
+            # mask shape = N x 1632
             # compute all metrics on this batch
-            summary_batch = {'q3accuracy': metrics['q3accuracy'](q3output_batch, q3labels_batch, mask), 'q8accuracy': metrics['q8accuracy'](q8output_batch, q8labels_batch, mask)}
-            summary_batch['loss'] = loss.item()
+            summary_batch = {'val_q3accuracy': metrics['q3accuracy'](q3output_batch, q3labels_batch, mask), 'val_q8accuracy': metrics['q8accuracy'](q8output_batch, q8labels_batch, mask)}
+            summary_batch['val_loss'] = loss.item()
             summ.append(summary_batch)
 
             # update the average loss
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     params = utils.Params(json_path)
 
     # use GPU if available
-    params.cuda = torch.cuda.is_available()     # use GPU is available
+    params.cuda = torch.cuda.is_available()
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
@@ -131,7 +130,7 @@ if __name__ == '__main__':
     loss_fn = net.loss_fn
     metrics = net.metrics
 
-    logging.info("Starting evaluation")
+    logging.info("Starting evaluation..")
 
     # Reload weights from the saved file
     utils.load_checkpoint(os.path.join(
