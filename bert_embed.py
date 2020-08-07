@@ -54,10 +54,10 @@ if __name__ == "__main__":
     sequences_Example =[]
     count = 0
     with open("./residuesequences.txt", "r") as f:
-    for seq in f.readlines():
-        desc = str(seq).rstrip('\n')
-        sequences_Example.append(desc)
-        count += 1
+        for seq in f.readlines():
+            desc = str(seq).rstrip('\n')
+            sequences_Example.append(desc)
+            count += 1
     print("Total data points(Clean): ", str(count))
 
     #Replace "UZOB" with "X"
