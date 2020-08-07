@@ -36,7 +36,6 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
         dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
-        num_steps: (int) number of batches to train on, each of size params.batch_size
     """
 
     # set model to training mode
