@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 print("Saving batch " + str(batch))
                 embedding_file = prefix + str(batch) + ".h5"
                 print("Batch " + str(batch))
-                print(embedding.shape, embedding.device)
+                print(embedding.shape)
                 # torch.save(embedding, embedding_file)
                 with h5py.File(embedding_file, 'w', smwr = True) as f:
                     f.create_dataset('embed', data=embedding)
