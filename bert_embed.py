@@ -102,7 +102,7 @@ if __name__ == "__main__":
                 with h5py.File(embedding_file, 'w') as f:
                     f.create_dataset('embed', data=embedding)
                 print("Saved...\n")
-                embedding.zero_()
+                embedding.fill(0)
 
         if i != len(sequences_Example):
             #Final batch < 16
