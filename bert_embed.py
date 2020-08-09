@@ -73,9 +73,9 @@ if __name__ == "__main__":
     if not os.path.exists(prefix):
         os.makedirs(prefix)
     bs = 16
-    batch = 0
-    count = 0
-    i = 0
+    batch = 84
+    count = 672
+    i = 10752
     embedding = np.zeros((128,1632,1024), dtype = np.float32)
 
     limit = len(sequences_Example)//bs * bs
@@ -107,8 +107,9 @@ if __name__ == "__main__":
         if i != len(sequences_Example):
             #Final batch < 16
             e = model(input_ids=input_ids[i:len(sequences_Example)],attention_mask=attention_mask[i:len(sequences_Example)])[0]
-            embedding[x:x+len(sequences_Example) - i,:,:] = e[:,1:1633,:]
             e = e.cpu().numpy()
+            embedding[x:x+len(sequences_Example) - i,:,:] = e[:,1:1633,:]
+            
             batch += 1
             print("Saving batch " + str(batch))
             embedding_file = prefix + str(batch) + ".h5"
