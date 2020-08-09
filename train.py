@@ -190,14 +190,15 @@ if __name__ == '__main__':
     if params.cuda:
         torch.cuda.manual_seed(230)
 
+    labelprefix = join(pwd,'maskandlabels.npz')
+    # embeddir = join(pwd, 'Embeddings')
+    embedprefix = pwd + '/Embeddings/batch'
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
-    labelprefix = join(pwd,'maskandlabels.npz')
-    embeddir = join(pwd, 'Embeddings')
-    embedprefix = join(embeddir, "batch")
+    
     # fetch dataloaders
     dataloaders = data_loader.fetch_dataloader(
         'train', labelprefix, emdedprefix, params)
