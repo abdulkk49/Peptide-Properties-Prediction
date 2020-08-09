@@ -191,8 +191,8 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(230)
     print("Params: " ,str(params))
     labelprefix = join(pwd,'maskandlabels.npz')
-    # embeddir = join(pwd, 'Embeddings')
-    embedprefix = pwd + '/Embeddings/batch'
+    embeddir = join(pwd, 'Embeddings')
+    embedprefix = join(pwd, 'batch')
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
 
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     logging.info("Loading the datasets...")
     
     # fetch dataloaders
-    dataloaders = data_loader.fetch_dataloader('train', labelprefix, emdedprefix, params)
+    dataloaders = data_loader.fetch_dataloader('train', labelprefix, embedprefix, params)
     train_dl = dataloaders['train']
     val_dl = dataloaders['val']
 
