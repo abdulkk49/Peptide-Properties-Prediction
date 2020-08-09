@@ -2,7 +2,7 @@ import random
 import os, numpy as np
 import h5py
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import torchvision.transforms as transforms
 
 
