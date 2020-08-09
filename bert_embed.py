@@ -124,5 +124,5 @@ if __name__ == "__main__":
     arr = f['embed'][()]
     arr = arr[~(arr == 0).all(2)]
     with h5py.File(join(prefix, "batch85" + ".h5"), 'w') as f:
-        f.create_dataset('embed', data=embedding)
+        f.create_dataset('embed', data=arr)
 
