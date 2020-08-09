@@ -11,9 +11,9 @@ from tqdm import tqdm
 
 import utils
 from evaluate import evaluate
+from os.path import join, exists, dirname, abspath, realpath
 
 sys.path.append(dirname(abspath("__file__")))
-from os.path import join, exists, dirname, abspath, realpath
 
 import models.net as net
 import models.data_loader as data_loader
