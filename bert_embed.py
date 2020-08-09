@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 batch += 1
                 x = 0
                 print("Saving batch " + str(batch))
-                embedding_file = prefix + str(batch) + ".h5"
+                embedding_file = join(prefix, "batch" + str(batch) + ".h5")
                 print("Batch " + str(batch))
                 print(embedding.shape)
                 # torch.save(embedding, embedding_file)
