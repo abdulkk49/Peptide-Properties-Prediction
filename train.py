@@ -175,6 +175,7 @@ if __name__ == '__main__':
 
     # Load the parameters from json file
     pwd = dirname(realpath("__file__"))
+    print("Present Working Directory: ", pwd)
     args = parser.parse_args()
     json_path = os.path.join(pwd, 'params.json')
     assert os.path.isfile(
