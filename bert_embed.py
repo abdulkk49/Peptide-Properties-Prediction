@@ -120,7 +120,8 @@ if __name__ == "__main__":
 #                 f.create_dataset('embed', data=embedding)
 #             print("Saved...\n")
     embedding_file = join(prefix, "batch" + ".h5")
-    arr = np.load(embedding_file)
+    f = h5py.File(embedding_file, 'r')
+    arr = f['embed'][()]
     arr = arr[~(arr == 0).all(2)]
     with h5py.File(join(prefix, "batch85" + ".h5"), 'w') as f:
         f.create_dataset('embed', data=embedding)
