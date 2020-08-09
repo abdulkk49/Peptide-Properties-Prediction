@@ -18,7 +18,7 @@ class PerResidueDataset(Dataset):
         bs = 128
         cnt = index // bs
         i = index % bs
-        with h5py.File(self.prefix+str(cnt + 1),'r') as dataall:
+        with h5py.File(self.embedprefix + str(cnt + 1) + ".h5",'r') as dataall:
             seq  = dataall['embed'][i,:,:].astype(np.float32)
         q8label = self.labels[index,:,1:]
         mask = self.labels[index,:,0]

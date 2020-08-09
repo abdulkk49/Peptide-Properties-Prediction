@@ -195,7 +195,8 @@ if __name__ == '__main__':
     # Create the input data pipeline
     logging.info("Loading the datasets...")
     labelprefix = join(pwd,'maskandlabels.npz')
-    embedprefix = join(pwd, 'Embeddings')
+    embeddir = join(pwd, 'Embeddings')
+    embedprefix = join(embeddir, "batch")
     # fetch dataloaders
     dataloaders = data_loader.fetch_dataloader(
         'train', labelprefix, emdedprefix, params)
