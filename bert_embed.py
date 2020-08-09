@@ -73,9 +73,9 @@ if __name__ == "__main__":
     if not os.path.exists(prefix):
         os.makedirs(prefix)
     bs = 16
-    batch = 84
-    count = 672
-    i = 10752
+    batch = 0
+    count = 0
+    i = 0
     embedding = np.zeros((128,1632,1024), dtype = np.float32)
 
     limit = len(sequences_Example)//bs * bs
