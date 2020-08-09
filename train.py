@@ -13,12 +13,13 @@ import utils
 from evaluate import evaluate
 
 sys.path.append(dirname(abspath("__file__")))
+from os.path import join, exists, dirname, abspath, realpath
 
 import models.net as net
 import models.data_loader as data_loader
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', default='data/64x64_SIGNS',
+parser.add_argument('--data_dir', default='./Embeddings',
                     help="Directory containing the dataset")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
@@ -173,8 +174,9 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
 if __name__ == '__main__':
 
     # Load the parameters from json file
+    pwd = dirname(realpath("__file__"))
     args = parser.parse_args()
-    json_path = os.path.join(args.model_dir, 'params.json')
+    json_path = os.path.join(pwd, 'params.json')
     assert os.path.isfile(
         json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
@@ -192,7 +194,8 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
-
+    labelprefix = join(pwd,'maskandlabels.npz')
+    embedprefix = join(pwd, 'Embeddings')
     # fetch dataloaders
     dataloaders = data_loader.fetch_dataloader(
         'train', labelprefix, emdedprefix, params)
