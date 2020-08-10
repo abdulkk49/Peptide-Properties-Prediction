@@ -125,9 +125,10 @@ if __name__ == "__main__":
     arr = f['embed'][()]
     f.close()
     print(arr.shape)
-    arr = np.reshape(arr, (-1, 1632, 1024))
+    
     arr = arr[~(arr == 0).all(2)] # Remove all zero entries
     print(arr.shape)
+    arr = np.reshape(arr, (-1, 1632, 1024))
     with h5py.File(join(prefix, "batch85" + ".h5"), 'w') as f:
         f.create_dataset('embed', data=arr)
     f.close()
