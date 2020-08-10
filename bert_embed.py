@@ -124,6 +124,7 @@ if __name__ == "__main__":
     f = h5py.File(embedding_file, 'r')
     arr = f['embed'][()]
     print(arr.shape)
+    arr = np.reshape(arr, (-1, 1632, 1024))
     arr = arr[~(arr == 0).all(2)] # Remove all zero entries
     print(arr.shape)
     with h5py.File(join(prefix, "batch85" + ".h5"), 'w') as f:
