@@ -68,15 +68,15 @@ def fetch_dataloader(action, labelprefix, embedprefix, params):
         train_sampler = SubsetRandomSampler(train_indices)
         valid_sampler = SubsetRandomSampler(val_indices)
 
-        train_loader = DataLoader(dataset, batch_size=batch_size, 
+        train_loader = DataLoader(dataset, batch_size=params.batch_size, 
                                 sampler=train_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
-        validation_loader = DataLoader(dataset, batch_size=batch_size,
+        validation_loader = DataLoader(dataset, batch_size=params.batch_size,
                                         sampler=valid_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
         dataloaders['train'] = train_loader
         dataloaders['val'] = validation_loader
     else:
         dataset = PerResidueDataset(labelprefix, embedprefix, transformer)
-        test_loader = DataLoader(dataset, batch_size=batch_size, 
+        test_loader = DataLoader(dataset, batch_size=params.batch_size, 
                                 sampler=train_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
         dataloaders['test'] = test_loader
 
