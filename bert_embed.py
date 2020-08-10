@@ -14,7 +14,7 @@ from os.path import join, exists, dirname, abspath, realpath
 #         for chunk in response.iter_content(chunk_size=4096):
 #             fout.write(chunk)
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     pwd = dirname(realpath("__file__"))
     print("Present Working Directory: ", pwd)
 #     #Pretrained Model files
