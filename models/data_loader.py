@@ -19,7 +19,7 @@ class PerResidueDataset(Dataset):
         i = index % bs
         with h5py.File(self.embedprefix + str(cnt + 1) + ".h5",'r') as dataall:
             f  = dataall['embed']
-            seq = f[index,:,:]
+            seq = f[i,:,:]
         q8label = self.labels[index,:,1:]
         mask = self.labels[index,:,0]
         seq = torch.Tensor(seq).float()
