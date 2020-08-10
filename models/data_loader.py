@@ -1,4 +1,4 @@
-import random
+import random, torch
 import os, numpy as np
 import h5py
 from PIL import Image
