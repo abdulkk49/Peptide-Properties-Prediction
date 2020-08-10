@@ -1,7 +1,9 @@
 import h5py, numpy as np
+import os
 count = 0
+pwd = dirname(realpath("__file__"))
 for i in range(1,86):
-    with h5py.File('./Embeddings/batch' + str(i), 'r') as dataall:
+    with h5py.File(os.path.join(pwd, 'Embeddings/batch' + str(i)), 'r') as dataall:
         f  = dataall['embed']
         count += len(f)
 
