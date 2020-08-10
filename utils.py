@@ -97,7 +97,7 @@ def save_dict_to_json(d, json_path):
         json.dump(d, f, indent=4)
 
 
-def save_checkpoint(state, is_best, checkpoint):
+def save_checkpoint(state, is_q3best, is_q8best, checkpoint):
     """Saves model and training parameters at checkpoint + 'last.pth.tar'. I
     checkpoint + 'best.pth.tar'
     Args:
@@ -112,9 +112,10 @@ def save_checkpoint(state, is_best, checkpoint):
     else:
         print("Checkpoint Directory exists! ")
     torch.save(state, filepath)
-    if is_best:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'best.pth.tar'))
-
+    if is_q3best:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'q3q8best.pth.tar'))
+    if is_q8best:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'q8best.pth.tar'))
 
 def load_checkpoint(checkpoint, model, optimizer=None):
     """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
@@ -133,4 +134,3 @@ def load_checkpoint(checkpoint, model, optimizer=None):
         optimizer.load_state_dict(checkpoint['optim_dict'])
 
     return checkpoint
-

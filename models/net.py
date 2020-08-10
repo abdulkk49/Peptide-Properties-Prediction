@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ResidueNet(nn.Module):
-    def ___init__(self, params):
+    def __init__(self, params):
         super(ResidueNet, self).__init__()
         self.inplanes = params.inplanes
         self.outplanes = params.outplanes
@@ -13,7 +13,7 @@ class ResidueNet(nn.Module):
         self.stride = params.stride
         self.drop = params.drop
         self.conv1 = nn.Conv1d(self.inplanes, self.outplanes, kernel_size = self.kernel, padding = self.padding, stride = self.stride, bias=False)
-        self.relu = nn.relu()
+        self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p = self.drop)
         self.convQ3 = nn.Conv1d(self.outplanes, 3, kernel_size = self.kernel, padding = self.padding, stride = self.stride, bias=False)
         self.convQ8 = nn.Conv1d(self.outplanes, 8, kernel_size = self.kernel, padding = self.padding, stride = self.stride, bias=False)
@@ -55,4 +55,3 @@ metrics = {
     'q3accuracy': accuracy, 'q8accuracy': accuracy, 
     # could add more metrics such as accuracy for each token type
 }
-

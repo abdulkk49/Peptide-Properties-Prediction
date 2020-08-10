@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 
 
 class PerResidueDataset(Dataset):
-    def __init__(self, labelprefix, embedprefix, transform = None):
+    def __init__(self, labelprefix, embedprefix):
         self.labelprefix = labelprefix
         self.embedprefix = embedprefix
         self.labels = np.load(labelprefix)['label']
@@ -22,10 +22,9 @@ class PerResidueDataset(Dataset):
             seq  = dataall['embed'][i,:,:].astype(np.float32)
         q8label = self.labels[index,:,1:]
         mask = self.labels[index,:,0]
-        if self.transform:
-            seq = self.transform(seq)
-            q8label = self.transform(q8label)
-            mask = self.transform(mask)
+        seq = torch.Tensor(seq)
+        q8label = torch.Tensor(q8label)
+        mask = torch.Tensor(mask)
         return seq, q8label, mask
 
     def __len__(self):
@@ -45,10 +44,10 @@ def fetch_dataloader(action, labelprefix, embedprefix, params):
     Returns:
         data: (dict) contains the DataLoader object for each type in types
     """
-    transformer = transforms.Compose([transforms.ToTensor()])
+    # transformer = transforms.Compose([transforms.ToTensor()])
     dataloaders = {}
     if action == 'train':
-        dataset = PerResidueDataset(labelprefix, embedprefix, transformer)
+        dataset = PerResidueDataset(labelprefix, embedprefix)
         # batch_size = 128
         validation_split = .05
         shuffle_dataset = True

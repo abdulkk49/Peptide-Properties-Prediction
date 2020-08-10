@@ -26,6 +26,8 @@ parser.add_argument('--model_dir', default='./trial',
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir containing weights to reload before \
                     training")  # 'best' or 'train'
+parser.add_argument('--batch', default=128,
+                    help="Batch Size for Training")
 
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
@@ -51,9 +53,10 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
         for i, (train_batch, q8labels_batch, mask) in enumerate(dataloader):
             # move to GPU if available
             if params.cuda:
-                train_batch, q8labels_batch = train_batch.cuda(non_blocking=True),\
+                train_batch, q8labels_batch, mask = train_batch.cuda(non_blocking=True),\
                 q8labels_batch.cuda(non_blocking=True), mask.cuda(non_blocking = True)
             # N x 1634 x 1024 -> N x 1024 x 1632
+            # print(train_batch.shape, q8labels_batch.shape, mask.shape)
             train_batch = train_batch.permute(0,2,1)
             # N x 1632 x 3
             q3labels_batch = torch.zeros((train_batch.shape[0],train_batch.shape[2],3))
@@ -92,6 +95,7 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
                 q8output_batch = q8output_batch.data.cpu().numpy()
                 q3labels_batch = q3labels_batch.data.cpu().numpy()
                 q8labels_batch = q8labels_batch.data.cpu().numpy()
+                mask = mask.cpu().numpy()
                 #mask shape = N x 1632
                 # compute all metrics on this batch
                 summary_batch = {'q3accuracy': metrics['q3accuracy'](q3output_batch, q3labels_batch, mask), 'q8accuracy': metrics['q8accuracy'](q8output_batch, q8labels_batch, mask)}
@@ -133,7 +137,8 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         logging.info("Restoring parameters from {}".format(restore_path))
         utils.load_checkpoint(restore_path, model, optimizer)
 
-    best_val_acc = 0.0
+    best_val_q8acc = 0.0
+    best_val_q3acc = 0.0
 
     for epoch in range(params.num_epochs):
         # Run one epoch
@@ -145,31 +150,43 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         # Evaluate for one epoch on validation set
         val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
 
-        val_acc = val_metrics['accuracy']
-        is_best = val_acc >= best_val_acc
+        val_q8acc = val_metrics['val_q8accuracy']
+        val_q3acc = val_metrics['val_q3accuracy']
+        is_q8best = val_q8acc >= best_val_q8acc
+        is_q3best = val_q3acc >= best_val_q3acc
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,
                                'state_dict': model.state_dict(),
                                'optim_dict': optimizer.state_dict()},
-                              is_best=is_best,
-                              checkpoint=model_dir)
+                                is_q3best = is_q3best,
+                                is_q8best = is_q8best,
+                                checkpoint = model_dir)
 
         # If best_eval, best_save_path
-        if is_best:
-            logging.info("- Found new best accuracy")
-            best_val_acc = val_acc
+        if is_q8best:
+            logging.info("- Found new best q8 accuracy")
+            best_val_q8acc = val_q8acc
 
             # Save best val metrics in a json file in the model directory
             best_json_path = os.path.join(
-                model_dir, "metrics_val_best_weights.json")
+                model_dir, "metrics_val_q8best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
+
+        if is_q3best:
+            logging.info("- Found new best q3 accuracy")
+            best_val_q3acc = val_q3acc
+
+            # Save best val metrics in a json file in the model directory
+            best_json_path = os.path.join(
+                model_dir, "metrics_val_q3best_weights.json")
+            utils.save_dict_to_json(val_metrics, best_json_path)
+
 
         # Save latest val metrics in a json file in the model directory
         last_json_path = os.path.join(
             model_dir, "metrics_val_last_weights.json")
         utils.save_dict_to_json(val_metrics, last_json_path)
-
 
 if __name__ == '__main__':
 
@@ -184,22 +201,21 @@ if __name__ == '__main__':
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
-
+    params.batch_size = args.batch
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
     if params.cuda:
         torch.cuda.manual_seed(230)
-    print("Params: " ,str(params))
+    print("Params: " ,params.__dict__)
     labelprefix = join(pwd,'maskandlabels.npz')
     embeddir = join(pwd, 'Embeddings')
-    embedprefix = join(pwd, 'batch')
+    embedprefix = join(embeddir, 'batch')
     # Set the logger
-    utils.set_logger(os.path.join(args.model_dir, 'train.log'))
+    print("Embed prefix: ", embedprefix)
+    set_logger(os.path.join(args.model_dir, 'train.log'))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
-    
-    # fetch dataloaders
     dataloaders = data_loader.fetch_dataloader('train', labelprefix, embedprefix, params)
     train_dl = dataloaders['train']
     val_dl = dataloaders['val']
@@ -218,5 +234,5 @@ if __name__ == '__main__':
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, args.model_dir,
-                       args.restore_file)
+    train_and_evaluate(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, join(pwd, "trial"),
+                        None)

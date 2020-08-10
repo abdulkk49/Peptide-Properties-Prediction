@@ -37,11 +37,10 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
 
     # summary for current eval loop
     summ = []
-    for i, (val_batch, q8labels_batch, mask) in enumerate(dataloader):
+    for val_batch, q8labels_batch, mask in dataloader:
             # move to GPU if available
             if params.cuda:
-                val_batch, q8labels_batch = val_batch.cuda(non_blocking=True),\
-                q8labels_batch.cuda(non_blocking=True), mask.cuda(non_blocking = True)
+                val_batch, q8labels_batch = val_batch.cuda(non_blocking=True), q8labels_batch.cuda(non_blocking=True)
             # N x 1634 x 1024 -> N x 1024 x 1632
             val_batch = val_batch.permute(0,2,1)
             # N x 1632 x 3
@@ -71,18 +70,13 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             q8output_batch = q8output_batch.data.cpu().numpy()
             q3labels_batch = q3labels_batch.data.cpu().numpy()
             q8labels_batch = q8labels_batch.data.cpu().numpy()
+            mask = mask.cpu().numpy()
 
             # mask shape = N x 1632
             # compute all metrics on this batch
             summary_batch = {'val_q3accuracy': metrics['q3accuracy'](q3output_batch, q3labels_batch, mask), 'val_q8accuracy': metrics['q8accuracy'](q8output_batch, q8labels_batch, mask)}
             summary_batch['val_loss'] = loss.item()
             summ.append(summary_batch)
-
-            # update the average loss
-            loss_avg.update(loss.item())
-
-            t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
-            t.update()
 
     # compute mean of all metrics in summary
     metrics_mean = {metric: np.mean([x[metric]
