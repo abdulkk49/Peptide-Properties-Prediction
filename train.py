@@ -207,7 +207,9 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     # Define the model and optimizer
-    model = net.ResidueNet(params).cuda() if params.cuda else net.ResidueNet(params)
+    model = net.ResidueNet(params)
+    if params.cuda:
+        model = model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
     # fetch loss function and metrics
