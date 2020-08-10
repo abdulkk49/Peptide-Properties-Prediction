@@ -11,7 +11,7 @@ class PerResidueDataset(Dataset):
         self.labelprefix = labelprefix
         self.embedprefix = embedprefix
         self.labels = np.load(labelprefix)['label']
-        self.num_sample = 7000
+        self.num_sample = self.labels.shape[0]
     
     def __getitem__(self, index):
         bs = 128
