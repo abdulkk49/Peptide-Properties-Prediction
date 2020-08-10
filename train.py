@@ -203,8 +203,8 @@ if __name__ == '__main__':
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
-    params.batch_size = args.batch
-    params.num_workers = args.num_workers
+    params.batch_size = int(args.batch)
+    params.num_workers = int(args.num_workers)
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
     if params.cuda:
