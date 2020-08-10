@@ -1,2 +1,2 @@
-{"learning_rate": 1e-2,"inplanes": 1024, "outplanes": 32, "stride": 1, "padding": 3, "drop": 0.25, "kernel": 7,"num_epochs": 10, "num_channels": 32, "save_summary_steps": 100, "num_workers": 4
+{"learning_rate": 1e-2,"inplanes": 1024, "outplanes": 32, "stride": 1, "padding": 3, "drop": 0.25, "kernel": 7,"num_epochs": 10, "num_channels": 32, "save_summary_steps": 80, "num_workers": 4
 }

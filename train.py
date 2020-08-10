@@ -28,6 +28,8 @@ parser.add_argument('--restore_file', default=None,
                     training")  # 'best' or 'train'
 parser.add_argument('--batch', default=128,
                     help="Batch Size for Training")
+parser.add_argument('--num_workers', default=1,
+                    help="Num workers for Training")
 
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
@@ -202,6 +204,7 @@ if __name__ == '__main__':
     # use GPU if available
     params.cuda = torch.cuda.is_available()
     params.batch_size = args.batch
+    params.num_workers = args.num_workers
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
     if params.cuda:
