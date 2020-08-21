@@ -6,30 +6,26 @@ from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import torchvision.transforms as transforms
 
 
-import random, torch
-import os, numpy as np
-import h5py
-from PIL import Image
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-import torchvision.transforms as transforms
-
-
 class PerResidueDataset(Dataset):
-    def __init__(self, labelprefix, input_ids, attention_mask):
+    def __init__(self, labelprefix, embedprefix):
         self.labelprefix = labelprefix
-        self.input_ids = input_ids
-        self.attention_mask = attention_mask
+        self.embedprefix = embedprefix
         self.labels = np.load(labelprefix)['label']
         self.num_sample = self.labels.shape[0]
     
     def __getitem__(self, index):
-       
-        at_m = self.attention_mask[index]
-        in_id = self.input_ids[index]
+        bs = 128
+        cnt = index // bs
+        i = index % bs
+        with h5py.File(self.embedprefix + str(cnt + 1) + ".h5",'r') as dataall:
+            f  = dataall['embed']
+            seq = f[i,:,:]
         q8label = self.labels[index,:,1:]
         mask = self.labels[index,:,0]
-       
-        return in_id, at_m, torch.Tensor(q8label), torch.Tensor(mask)
+        seq = torch.Tensor(seq).float()
+        q8label = torch.Tensor(q8label)
+        mask = torch.Tensor(mask)
+        return seq, q8label, mask
 
     def __len__(self):
         return self.num_sample
@@ -38,7 +34,7 @@ class PerResidueDataset(Dataset):
 
 
 
-def fetch_dataloader(action, labelprefix, input_ids, attention_mask, params, collate_fn):
+def fetch_dataloader(action, labelprefix, embedprefix, params):
     """
     Fetches the DataLoader object for each type in types from data_dir.
     Args:
@@ -51,7 +47,7 @@ def fetch_dataloader(action, labelprefix, input_ids, attention_mask, params, col
     # transformer = transforms.Compose([transforms.ToTensor()])
     dataloaders = {}
     if action == 'train':
-        dataset = PerResidueDataset(labelprefix, input_ids, attention_mask)
+        dataset = PerResidueDataset(labelprefix, embedprefix)
         # batch_size = 128
         validation_split = .05
         shuffle_dataset = True
@@ -71,16 +67,16 @@ def fetch_dataloader(action, labelprefix, input_ids, attention_mask, params, col
         train_sampler = SubsetRandomSampler(train_indices)
         valid_sampler = SubsetRandomSampler(val_indices)
 
-        train_loader = DataLoader(dataset, batch_size=params.batch_size, collate_fn = collate_fn, 
-                                sampler=train_sampler, num_workers=params.num_workers)
-        validation_loader = DataLoader(dataset, batch_size=params.batch_size, collate_fn = collate_fn,
-                                        sampler=valid_sampler, num_workers=params.num_workers)
+        train_loader = DataLoader(dataset, batch_size=params.batch_size, 
+                                sampler=train_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
+        validation_loader = DataLoader(dataset, batch_size=params.batch_size,
+                                        sampler=valid_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
         dataloaders['train'] = train_loader
         dataloaders['val'] = validation_loader
     else:
         dataset = PerResidueDataset(labelprefix, embedprefix, transformer)
         test_loader = DataLoader(dataset, batch_size=params.batch_size, 
-                                sampler=train_sampler, num_workers=params.num_workers, collate_fn = collate_fn)
+                                sampler=train_sampler, num_workers=params.num_workers, pin_memory=params.cuda)
         dataloaders['test'] = test_loader
 
     return dataloaders

@@ -15,14 +15,8 @@ from os.path import join, exists, dirname, abspath, realpath
 
 sys.path.append(dirname(abspath("__file__")))
 
-from models.data_loader import *
-from models.net import *
-from transformers import BertModel, BertTokenizer
-import re
-import os
-import requests, h5py
-from tqdm.auto import tqdm
-from os.path import join, exists, dirname, abspath, realpath
+import models.net as net
+import models.data_loader as data_loader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='./Embeddings',
@@ -36,90 +30,6 @@ parser.add_argument('--batch', default=128,
                     help="Batch Size for Training")
 parser.add_argument('--num_workers', default=1,
                     help="Num workers for Training")
-
-def download_file(url, filename):
-    response = requests.get(url, stream=True)
-    with tqdm.wrapattr(open(filename, "wb"), "write", miniters=1,
-                        total=int(response.headers.get('content-length', 0)),
-                        desc=filename) as fout:
-        for chunk in response.iter_content(chunk_size=4096):
-            fout.write(chunk)
-
-
-def embedModel():
-    pwd = dirname(realpath("__file__"))
-    print("Present Working Directory: ", pwd)
-    #Pretrained Model files
-    modelUrl = 'https://www.dropbox.com/s/dm3m1o0tsv9terq/pytorch_model.bin?dl=1'
-    configUrl = 'https://www.dropbox.com/s/d3yw7v4tvi5f4sk/bert_config.json?dl=1'
-    vocabUrl = 'https://www.dropbox.com/s/jvrleji50ql5m5i/vocab.txt?dl=1'
-
-    #Setting folder paths
-    downloadFolderPath = 'models/ProtBert/'
-    modelFolderPath = downloadFolderPath
-
-    #Setting file paths
-    modelFilePath = os.path.join(modelFolderPath, 'pytorch_model.bin')
-    configFilePath = os.path.join(modelFolderPath, 'config.json')
-    vocabFilePath = os.path.join(modelFolderPath, 'vocab.txt')
-
-    #Creading model directory
-    if not os.path.exists(modelFolderPath):
-        os.makedirs(modelFolderPath)
-
-    #Downloading pretrained model
-    if not os.path.exists(modelFilePath):
-        download_file(modelUrl, modelFilePath)
-    if not os.path.exists(configFilePath):
-        download_file(configUrl, configFilePath)
-    if not os.path.exists(vocabFilePath):
-        download_file(vocabUrl, vocabFilePath)
-
-    #Initializing Tokenizer, Model
-    tokenizer = BertTokenizer(vocabFilePath, do_lower_case=False )
-    model = BertModel.from_pretrained(modelFolderPath)
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
-
-    return model, tokenizer
-
-
-
-bertModel, tokenizer = embedModel()
-bertModel = bertModel.eval()
-
-def collate_fn(batch):
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    input_ids = [item[0] for item in batch]
-    attention_mask = [item[1] for item in batch]
-    input_ids = torch.stack(input_ids)
-    attention_mask = torch.stack(attention_mask)
-    print(input_ids.shape, attention_mask.shape)
-    embedding = torch.zeros((input_ids.shape[0],1632,1024), dtype = torch.float32).to(device)
-    i = 0
-    bs = 16
-    x = 0
-    with torch.no_grad():
-        while i + bs <= len(input_ids):
-            e = bertModel(input_ids=input_ids[i:i+bs],attention_mask=attention_mask[i:i+bs])[0]
-            # print(e.shape)
-            embedding[x:x+bs,:,:] = e[:,1:1633,:]
-            x += bs
-            i += bs
-            print(e.shape, i)
-
-    with torch.no_grad(): 
-    	if i != len(input_ids):
-            #Final batch < 16
-            e = bertModel(input_ids=input_ids[i:len(input_ids)],attention_mask=attention_mask[i:len(input_ids)])[0]
-            embedding[x:x+len(input_ids) - i,:,:] = e[:,1:1633,:]
-            print(e.shape, i)
-    	
-
-    q8label = torch.stack([item[2] for item in batch])
-    mask = torch.stack([item[3] for item in batch])
-    print(q8label.shape, mask.shape)
-    return embedding, q8label, mask
 
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
@@ -144,17 +54,17 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
     with tqdm(total=len(dataloader)) as t:
         for i, (train_batch, q8labels_batch, mask) in enumerate(dataloader):
             # move to GPU if available
-            # if params.cuda:
-            #     train_batch, q8labels_batch, mask = train_batch.cuda(non_blocking=True),\
-            #     q8labels_batch.cuda(non_blocking=True), mask.cuda(non_blocking = True)
+            if params.cuda:
+                train_batch, q8labels_batch, mask = train_batch.cuda(non_blocking=True),\
+                q8labels_batch.cuda(non_blocking=True), mask.cuda(non_blocking = True)
             # N x 1634 x 1024 -> N x 1024 x 1632
             # print(train_batch.shape, q8labels_batch.shape, mask.shape)
             train_batch = train_batch.permute(0,2,1)
             # N x 1632 x 3
             q3labels_batch = torch.zeros((train_batch.shape[0],train_batch.shape[2],3))
-            # if params.cuda:
-            #     q3labels_batch = q3labels_batch.cuda(non_blocking=True)
-            print(q3labels_batch.size, q3labels_batch.device, train_batch.shape)
+            if params.cuda:
+                q3labels_batch = q3labels_batch.cuda(non_blocking=True)
+
             q3labels_batch[:,:,0] = torch.sum(q8labels_batch[:,:,0:3], axis = -1)
             q3labels_batch[:,:,1] = torch.sum(q8labels_batch[:,:,3:5], axis = -1)
             q3labels_batch[:,:,2] = torch.sum(q8labels_batch[:,:,5:8], axis = -1)
@@ -168,8 +78,8 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # N x 8 x 1632 -> N x 1632 x 8
             q8output_batch = q8output_batch.permute(0,2,1)
 
-            q3loss = loss_fn(q3output_batch.cpu(), q3labels_batch)
-            q8loss = loss_fn(q8output_batch.cpu(), q8labels_batch)
+            q3loss = loss_fn(q3output_batch, q3labels_batch)
+            q8loss = loss_fn(q8output_batch, q8labels_batch)
 
             loss = q3loss + q8loss
             # clear previous gradients, compute gradients of all variables wrt loss
@@ -185,9 +95,9 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
                 q3output_batch = q3output_batch.data.cpu().numpy()
                 q8output_batch = q8output_batch.data.cpu().numpy()
-                q3labels_batch = q3labels_batch.data.numpy()
-                q8labels_batch = q8labels_batch.data.numpy()
-                mask = mask.numpy()
+                q3labels_batch = q3labels_batch.data.cpu().numpy()
+                q8labels_batch = q8labels_batch.data.cpu().numpy()
+                mask = mask.cpu().numpy()
                 #mask shape = N x 1632
                 # compute all metrics on this batch
                 summary_batch = {'q3accuracy': metrics['q3accuracy'](q3output_batch, q3labels_batch, mask), 'q8accuracy': metrics['q8accuracy'](q8output_batch, q8labels_batch, mask)}
@@ -301,48 +211,29 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(230)
     print("Params: " ,params.__dict__)
     labelprefix = join(pwd,'maskandlabels.npz')
-    # embeddir = join(pwd, 'Embeddings')
-    # embedprefix = join(embeddir, 'batch')
-
-    #Load sequences
-    sequences_Example =[]
-    count = 0
-    with open("./residuesequences.txt", "r") as f:
-        for seq in f.readlines():
-            desc = str(seq).rstrip('\n')
-            sequences_Example.append(desc)
-            count += 1
-    print("Total data points(Clean): ", str(count))
-
-    #Replace "UZOB" with "X"
-    sequences_Example = [re.sub(r"[UZOB]", "X", sequence) for sequence in sequences_Example]
-
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    #Tokenizing input sequences
-    ids = tokenizer.batch_encode_plus(sequences_Example, add_special_tokens=True, pad_to_max_length=True)
-    input_ids = torch.tensor(ids['input_ids']).to(device)
-    attention_mask = torch.tensor(ids['attention_mask']).to(device)
+    embeddir = join(pwd, 'Embeddings')
+    embedprefix = join(embeddir, 'batch')
     # Set the logger
-
+    print("Embed prefix: ", embedprefix)
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
-    dataloaders = fetch_dataloader('train', labelprefix, input_ids, attention_mask, params, collate_fn)
+    dataloaders = data_loader.fetch_dataloader('train', labelprefix, embedprefix, params)
     train_dl = dataloaders['train']
     val_dl = dataloaders['val']
 
     logging.info("- done.")
 
     # Define the model and optimizer
-    model = ResidueNet(params)
+    model = net.ResidueNet(params)
     if params.cuda:
         model = model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
     # fetch loss function and metrics
-    loss_fn = loss_fn
-    metrics = metrics
+    loss_fn = net.loss_fn
+    metrics = net.metrics
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))

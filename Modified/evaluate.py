@@ -39,14 +39,14 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     summ = []
     for val_batch, q8labels_batch, mask in dataloader:
             # move to GPU if available
-            # if params.cuda:
-            #     val_batch, q8labels_batch = val_batch.cuda(non_blocking=True), q8labels_batch.cuda(non_blocking=True)
+            if params.cuda:
+                val_batch, q8labels_batch = val_batch.cuda(non_blocking=True), q8labels_batch.cuda(non_blocking=True)
             # N x 1634 x 1024 -> N x 1024 x 1632
             val_batch = val_batch.permute(0,2,1)
             # N x 1632 x 3
             q3labels_batch = torch.zeros((val_batch.shape[0],val_batch.shape[2],3))
-            # if params.cuda:
-            #     q3labels_batch = q3labels_batch.cuda(non_blocking=True)
+            if params.cuda:
+                q3labels_batch = q3labels_batch.cuda(non_blocking=True)
 
             q3labels_batch[:,:,0] = torch.sum(q8labels_batch[:,:,0:3], axis = -1)
             q3labels_batch[:,:,1] = torch.sum(q8labels_batch[:,:,3:5], axis = -1)
@@ -60,16 +60,16 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
             # N x 6 x 1632 -> N x 1632 x 6
             q8output_batch = q8output_batch.permute(0,2,1)
 
-            q3loss = loss_fn(q3output_batch.cpu(), q3labels_batch)
-            q8loss = loss_fn(q8output_batch.cpu(), q8labels_batch)
+            q3loss = loss_fn(q3output_batch, q3labels_batch)
+            q8loss = loss_fn(q8output_batch, q8labels_batch)
 
             loss = q3loss + q8loss
             
             # extract data from torch Variable, move to cpu, convert to numpy arrays
             q3output_batch = q3output_batch.data.cpu().numpy()
             q8output_batch = q8output_batch.data.cpu().numpy()
-            q3labels_batch = q3labels_batch.data.numpy()
-            q8labels_batch = q8labels_batch.data.numpy()
+            q3labels_batch = q3labels_batch.data.cpu().numpy()
+            q8labels_batch = q8labels_batch.data.cpu().numpy()
             mask = mask.cpu().numpy()
 
             # mask shape = N x 1632
